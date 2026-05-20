@@ -87,26 +87,13 @@ final class RepairCommand extends SshCommand implements PushResultProcessing.Ssh
       full = true;
     }
 
-    Set<URIish> failedUris = new HashSet<>();
-    if (full || copyPacks) {
-      failedUris.addAll(copyPacks(project));
-    }
-
+    Set<URIish> failedUris = repair(project);
     if (!failedUris.isEmpty()) {
       throw new UnloggedFailure(1, "Repair failed for " + failedUris.size() + " destination(s)");
     }
-
-    writeStdOutSync("\nRunning replication start for " + project.get() + " ...");
-    replicationStarter.start(
-        urlMatch,
-        Set.of(),
-        new ReplicationFilter(List.of(project.get()), Collections.emptyList()),
-        /* now= */ true,
-        /* wait= */ true,
-        this);
   }
 
-  private Set<URIish> copyPacks(Project.NameKey project) throws Failure {
+  private Set<URIish> repair(Project.NameKey project) throws Failure {
     Path packDir;
     try (Repository repo = gitManager.openRepository(project)) {
       packDir = repo.getDirectory().toPath().resolve("objects").resolve("pack");
@@ -138,10 +125,20 @@ final class RepairCommand extends SshCommand implements PushResultProcessing.Ssh
 
     Set<URIish> failedUris = new HashSet<>();
     for (URIish uri : copyTargets) {
-      writeStdOutSync("Copying pack files to " + uri + " ...");
-      if (!copyInOrder(packDir, uri)) {
+      writeStdOutSync("\nRepairing " + uri + " ...");
+      if ((full || copyPacks) && !copyInOrder(packDir, uri)) {
         failedUris.add(uri);
+        continue;
       }
+      writeStdOutSync(
+          "\nRunning replication start for " + project.get() + " to " + uri.toString() + " ...");
+      replicationStarter.start(
+          uri.toString(),
+          Set.of(),
+          new ReplicationFilter(List.of(project.get()), Collections.emptyList()),
+          /* now= */ true,
+          /* wait= */ true,
+          this);
     }
     return failedUris;
   }
