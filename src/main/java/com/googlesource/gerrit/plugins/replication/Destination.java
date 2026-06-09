@@ -435,10 +435,6 @@ public class Destination {
     return false;
   }
 
-  void schedule(Project.NameKey project, Set<String> refs, URIish uri, ReplicationState state) {
-    schedule(project, refs, uri, state, false);
-  }
-
   void scheduleFromStorage(
       Project.NameKey project, Set<String> refs, URIish uri, ReplicationState state) {
     schedule(project, refs, uri, state, false, true);
