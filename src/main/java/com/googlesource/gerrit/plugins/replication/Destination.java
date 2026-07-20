@@ -925,6 +925,10 @@ public class Destination {
     return config.getRemoteConfig().getName();
   }
 
+  UrlDistributionStrategy getUrlDistributionStrategy() {
+    return config.getUrlDistributionStrategy();
+  }
+
   public int getMaxRetries() {
     return config.getMaxRetries();
   }
